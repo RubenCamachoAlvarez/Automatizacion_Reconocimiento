@@ -2,11 +2,40 @@
 #
 #	Autor: Ruben Camacho Alvarez
 #
-#	Descripcion
+#	Descripcion: Este script esta diseñado para automatizar el proceso de reconocimiento aplicado a un
+#	a un equipo que sea de interés para el usuario.
+#	De esta manera, este script se encarga de crear el directorio principal donde a su vez son creados
+#	los subdirectorios 'recon', 'exploit' y 'content'. Posteriormente realiza el escaneo de puertos y
+#	descubrimiento de servicios que estén en dicho puertos y finalmente si se encuentra un servidor HTTP o
+#	HTTPS en escucha por medio de un puerto abierto del equipo objetivo, se aplica un proceso de fuzzing
+#	para tratar de descubrir las rutas disponibles para acceder a recursos que proporciona dicho servidor
+#	HTTP.
+#
+#	Finalmente algo importante aclarar, cualquier elemento que al ejecutar el script genere un conflicto
+#	para que el script concluya con su ejecucion, debe de ser manualmente eliminado por el usuario
+#	previo a la ejecicion de este script para evitar cualquier perdida de informacion de manera no
+#	intencionada. Un ejemplo de esto es el que exista ya la ruta especifica un directorio con el mismo
+#	nombre especificado como argumento por el usuario.
+#
+#	Si bien este proceso de eliminacion podria hacerse por medio de una confirmacion en este script,
+#	la realidad es que al ser este un script para dummies, es bastante riesgoso dejar en manos del script
+#	la eliminacion completa de directorios y subdirectorios simplemente solicitando una confirmacion
+#	para realizar esta operacion a un usuario novato o que incluso a un usuario experimentado por despiste
+#	se le pueda olvidar que en el directorio indicado tiene informacion importante.
+#
+#	Para mitigar este potencial peligro es que el script hay identificar estos conflictos, finaliza la
+#	ejecucion del script y le indica con un mensaje cual es el error que manualmente el usuario debe
+#	de atender antes de volver a ejecutar el script.
+#
+#	Esto no solo aplica para el caso de las rutas a recursos, sino tambien si no se tienen instalados
+#	los paquetes necesarios instalados en el sistema, etc.
+#
+#	Fecha de entrega: 02 de Febrero de 2025.
 #
 #	FES_AR@DGTIC
 #
 
+INVOCACION_SCRIPT="$0"
 
 DIRECCION_IPv4="$1"
 
@@ -18,17 +47,50 @@ RUTA_DIRECTORIOS_PADRE=""
 
 NOMBRE_DIRECTORIO_PRINCIPAL=""
 
-
-#Variable global que almacena el EXIT_CODE retornado al realizar operaciones criticas dentro del script.
-
 EXIT_CODE=0
 
 NUMERO_ARGUMENTOS_SCRIPT="$#"
 
+imprimir_ayuda_script() {
+
+	echo -e "\nAUTOMATIZACION DE PROCESO DE RECONOCIMIENTO\n"
+
+	echo "Funcion: Este script esta diseñado para poder realizar el proceso de reconocimiento de un equipo objetivo previo a realizar un proceso de pentest."
+
+	echo "Este script en un principio comienza creando un directorio principal donde posteriormente realiza la creacion de los subdirectorios 'recon', 'exploit' y 'content'."
+
+	echo "Posteriormente se realiza un escaneo de puertos utilizando NMAP."
+
+	echo "Si se identifica en los resultados del escaneo que el equipo objetivo tiene un puerto abierto donde este escuchando un servidor HTTP, entonces se usa FFUF para intentar descubrir las rutas disponibles."
+
+	echo -e "\nModo de invocacion:\n"
+
+	echo -e "bash $INVOCACION_SCRIPT direccion_ipv4, ruta_creacion_directorio_principal [, ruta_archivo_diccionario]\n\n"
+
+	echo -e "De este modo, si queremos ejecutar este script para un equipo con la direccion IPv4 192.168.25.30 y queremos realizar la creacion del directorio principal en /home/user/ con el nombre de 'escaneo', ejecutariamos el comando de la siguiente manera.\n"
+
+	echo -e "bash $INVOCACION_SCRIPT 192.168.25.30 /home/user/escaneo\n\n"
+
+	echo -e "Del mismo modo, si queremos ahora tambien indicar que use como diccionario el archivo 'diccionario.txt' que se encuentra en el directorio padre del directorio donde se ejecuta este comando, hariamos la invocacion del comando de la siguiente manera."
+
+	echo -e "bash $INVOCACION_SCRIPT 192.168.25.30 /home/user/escaneo ../diccionario.txt\n"
+
+	echo -e "\nEn ambos casos, tanto para indicar la ruta donde se creara el directorio del escaneo, como para indicar la ruta del archivo que sera usado como diccionario, pueden indicarse por medio de rutas absolutas o relativas.\n"
+
+	echo "NOTA IMPORTANTE: Cuando se indica la ruta (con el nombre) del directorio que se va a crear por este script, el script realiza previamente un análisis para conocer si los directorios padres ya existen."
+
+	echo "En caso de que estos directorios padres no existan el script intenta realizar su creacion automaticamente."
+
+	echo "Del mismo modo, se encarga de verificar que el nombre del directorio (ultimo token de la ruta) no se encuentre previamente creado. En caso de ya existir un elemento con ese nombre dentro de la ruta indicada, el script termina su ejecucion abruptamente, muestra el error al usuario y ES RESPONSABILIDAD DEL USUARIO LLEVAR A CABO EL PROCESO DE ELIMINACION DE DICHO DIRECTORIO/ELEMENTO si quiere asignarle dicho nombre al directorio que crea este script."
+
+	echo -e "Esta medida esta hecha para mitigar cualquier posibilidad de borrar informacion importante y que en caso de querer hacerlo EL USUARIO LO HAGA MANUALMENTE.\n"
+
+	echo "NOTA 2: Si este script no es ejecutado como root, el usuario que lo ejecuta debe de tener permisos de sudo, ya que al principio se solicita ingresar la contraseña para verificarlo y poder realizar la ejecucion correcta de las opciones de nmap que requieren permisos de superusuario."
+
+}
+
 
 imprimir_mensaje_error() {
-
-	#Esta funcion es utilizada para imprimir el mensaje recibido como argumento en la salida estandar de errores del sistema.
 
 	echo -e "$1" >&2
 
@@ -37,17 +99,13 @@ imprimir_mensaje_error() {
 
 verificar_exit_code() {
 
-	#Esta funcion se encarga de realizar la operacion o el conjunto de operaciones determinadas para cada tipo de codigo de salida.
-	
-	#Un valor de codigo de salida diferente de 0 es utilizado para indicar las diferentes razones donde una operaciones critica requerida por este script ha sido ejecutada incorrectamente o no se ha podido realizar.
-
 	if [ $EXIT_CODE -ne 0 ]; then
 
 		echo -en "\n"
 
 		case $EXIT_CODE in
 
-			1) imprimir_mensaje_error "El script ha sido ejecutado sin argumentos." ;;
+			1) imprimir_mensaje_error "El script ha sido ejecutado sin argumentos."; imprimir_ayuda_script;;
 
 			2) paquetes_no_instalados=("$@"); error_paquetes_no_instalados "${paquetes_no_instalados[@]}" ;;
 
@@ -90,10 +148,6 @@ verificar_exit_code() {
 }
 
 verificar_paquetes_instalados() {
-
-	#Esta funcion tiene el objetivo de verificar si el sistema tiene instalados los paquetes de 'nmap', 'ffuf' y 'sectlists'.
-	#En caso de que un paquete no este instalado, se ira agregando al arreglo que guarda el nombre de los paquetes.
-	#Finalmente, si se tiene algun elemento en este arreglo se indicara un codigo de salida 2, y se volvera a llamar a la funcion para que genere el error correspondiente.
 	
 	echo -e "\nVERIFICANDO LOS PAQUETES INSTALADOS\n"
 
@@ -197,39 +251,25 @@ verificar_permisos_superusuario() {
 
 verificar_argumentos_script() {
 
-	#Esta funcion es utilizada para verificar los argumentos con los que ha sido invocado este script.
-	
 	if [ $NUMERO_ARGUMENTOS_SCRIPT -eq 0 ]; then
-
-		#En caso de que el script haya sido invocado sin argumento, entonces asignamos 1 como codigo de salida.
 
 		EXIT_CODE=1
 		
 	else
 	
-		#Si la ruta del directorio principal especificada como segundo argumento NO corresponde con el formato de una ruta del sistema.
-	
 		if ! echo "$RUTA_DIRECTORIO_PRINCIPAL" | grep -qE '^/{0,1}((\.{1,2}|[a-zA-Z0-9_-]+)/)*[a-zA-Z0-9_-]+$'; then
 		
-			#Generamos un error indicando esto al usuario.
-		
 			EXIT_CODE=5
-			
+
 		else
-		
-			#Obtenemos todos los directorios padres de la ruta que indica donde se almacenará el directorio principal.
-		
+
 			RUTA_DIRECTORIOS_PADRE=$(echo "$RUTA_DIRECTORIO_PRINCIPAL" | grep -Eo '^/{0,1}((\.{1,2}|[a-zA-Z0-9_-]+)/)*')
 			
 			if [ "$RUTA_DIRECTORIOS_PADRE" == "" ]; then
 			
-				#Si no hay directorios padre en la ruta, entonces indicamos que el directorio padre es el directorio en el que se inicio la ejecucion del script '.'.
-			
 				RUTA_DIRECTORIOS_PADRE="."
 			
 			fi
-			
-			#Obtenemos el nombre del directorio principal que sera creado para llevar a cabo el proceso de nuestro script.
 			
 			NOMBRE_DIRECTORIO_PRINCIPAL=$(echo "$RUTA_DIRECTORIO_PRINCIPAL" | grep -Eo '[a-zA-Z0-9_-]+$')
 			
@@ -251,8 +291,6 @@ verificar_argumentos_script() {
 	
 
 	fi
-
-	#Llamada a la funcion 'verificar_exit_code'.
 
 	verificar_exit_code
 
@@ -318,47 +356,26 @@ solicitar_confirmacion_operacion() {
 verificar_ruta_creacion_directorio() {
 
 	if ! [ -d "$RUTA_DIRECTORIOS_PADRE" ]; then
-
-		#El directorio no existe.
-		
-		#Pedir confirmacion para su creacion.
 		
 		if solicitar_confirmacion_operacion "La ruta '$RUTA_DIRECTORIOS_PADRE' NO existe. ¿Desea intentar crearla?"; then
 
-			#Si se ha confirmado la creacion de la ruta principal, entonces tratamos de realizar su creacion por medio del comando mkdir -p
-
 			if ! mkdir -p "$RUTA_DIRECTORIOS_PADRE"; then
-
-				#Si el codigo de salida producido por mkdir es 1, indicando que la operacion no pudo completarse, entonces generamos
-				#el error indicando que fue imposible llevar a cabo la creacion de la ruta en cuestion y terminamos la ejecucion.
 
 				EXIT_CODE=8
 
 				verficar_exit_code
 
 			fi
-		
-		else:
 
-			#Si es rechazado el intento de creacion de la ruta, entonces simplemente generamos el error indicando que la ruta donde
-			#debe de crearse el directorio principal NO existe.
+		else:
 
 			EXIT_CODE=7
 
 			verificar_exit_code
-			
 
 		fi
 
 	elif ! [ -x "$RUTA_DIRECTORIOS_PADRE" ] || ! [ -w "$RUTA_DIRECTORIOS_PADRE" ]; then
-
-		#El directorio existe pero no se tienen permisos de ejecucion o escritura para continuar con la ejecucion del script.
-		
-		#Si bien lo ideal seria solicitar al usuario la confirmacion para volver a llevar a cabo la creacion de la ruta, la verdad
-		#es que esto podria ser perjudicial al solo pedir la confirmacion para literalmente borrar un directorio que podria
-		#contener cualquier tipo de informacion relevante. Por ende, en este caso solo terminamos la ejecucion del script indicando
-		#el error y dejando al usuario de borrar de manera manual o no el directorio o la cadena de directorios para que estos tengan
-		#los permisos apropiados, o simplemente volver a ejecutar el script con una ruta diferente.
 
 			EXIT_CODE=9
 
@@ -371,25 +388,15 @@ verificar_ruta_creacion_directorio() {
 
 	if [ -e "$RUTA_DIRECTORIO_PRINCIPAL" ]; then
 
-		#Si ya existe un elemento con el nombre del directorio principal indicado como segundo argumento, entonces generamos el error y terminamos la ejecucion del script.
-		
-		#Nuevamente por motivos de seguridad dejamos toda la responsabilidad al usuario de llevar a cabo la eliminacion manual de los elementos
-		#ya existentes en caso de querer usar dicho nombre para la creacion del directorio principal.
-
 		EXIT_CODE=11
 
 		verificar_exit_code
 
 	else
-
-		#En caso de que no exista un elemento con el nombre del directorio principal solicitado, tratamos de llevar a cabo la creacion
-		#del directorio principal.
 		
 		if [ -w "$RUTA_DIRECTORIOS_PADRE" ]; then
 
 			if ! mkdir "$NOMBRE_DIRECTORIO_PRINCIPAL"; then
-
-				#En caso de que mkdir no hay realizado la operacion de creacion del directorio correctamente, entonces esto al usuario mediante un error.
 			
 				EXIT_CODE=12
 
