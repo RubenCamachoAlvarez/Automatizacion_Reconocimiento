@@ -225,7 +225,15 @@ error_paquetes_no_instalados() {
 
 	for nombre_paquete in ${paquetes_no_instalados[@]}; do
 
-		echo "> $nombre_paquete"
+		imprimir_mensaje_error "> $nombre_paquete"
+
+		if [ "$nombre_paquete" == "seclists" ]; then
+
+			imprimir_mensaje_error "\nPuede que el sistema no haya podido detectar correctamente el paquete '$nombre_paquete'."
+
+			imprimir_mensaje_error "Si usted está seguro de que lo tiene instalado, entonces ingrese como tercer argumento la ruta al diccionario de seclists que desea utilizar.\n"
+
+		fi
 
 	done
 
