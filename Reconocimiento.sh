@@ -180,6 +180,8 @@ verificar_paquetes_instalados() {
 
 
 	fi
+
+	echo "ruta del diccionario ingresado: $RUTA_DICCIONARIO"
 	
 	
 	if [ "$RUTA_DICCIONARIO" == "" ]; then
