@@ -179,7 +179,7 @@ verificar_permisos_superusuario() {
 
 	if [ "$EUID" -ne 0  ]; then
 
-		echo -e "\nEste script no ha sido ejecutado como usuario 'root' y se necesita permisos de superusuario para poder utilizar caracteristicas avanzadas de NMAP para poder llevar a cabo el escaneo de redes."
+		echo -e "Este script no ha sido ejecutado como usuario 'root' y se necesita permisos de superusuario para poder utilizar caracteristicas avanzadas de NMAP para poder llevar a cabo el escaneo de redes."
 
 		echo -e "\nDebido a esto, tu usuario debe de tener permisos de sudo. Si el usuario '$(whoami)' cuenta con este permiso, ingresa tu contraseña para proceder\n"
 
@@ -415,9 +415,7 @@ verificar_ruta_creacion_directorio() {
 
 creacion_subdirectorios() {
 
-	cd "$RUTA_DIRECTORIO_PRINCIPAL"
-
-	mkdir recon exploit content
+	mkdir $RUTA_DIRECTORIO_PRINCIPAL/recon $RUTA_DIRECTORIO_PRINCIPAL/exploit $RUTA_DIRECTORIO_PRINCIPAL/content
 
 }
 
@@ -427,11 +425,11 @@ escaneos_NMAP() {
 
 	echo -e "\nREALIZANDO ESCANEO DE PUERTOS CON NMAP\n"
 
-	sudo nmap -sT -p- --open -Pn -n -vvv -oG recon/puertos.txt $DIRECCION_IPv4
+	sudo nmap -sT -p- --open -Pn -n -vvv -oG $RUTA_DIRECTORIO_PRINCIPAL/recon/puertos.txt $DIRECCION_IPv4
 
 	echo -e "\nRECABANDO INFORMACION DE LOS SERVICIOS USANDO NMAP\n"
 
-	sudo nmap -sCV -n -vvv -Pn -oN recon/nmap.txt $DIRECCION_IPv4
+	sudo nmap -sCV -n -vvv -Pn -oN $RUTA_DIRECTORIO_PRINCIPAL/recon/nmap.txt $DIRECCION_IPv4
 
 }
 
@@ -440,7 +438,7 @@ analisis_escaneos() {
 	echo -e "\nBUSCANDO PUERTOS CON SERVICIOS HTTP\n"
 
 
-	export puertos_servicios=$(grep -E 'Ports: ' recon/puertos.txt | grep -Eo '[0-9]{1,}([a-zA-Z]|/)+http[a-zA-Z]*' | cut -d '/' -f1,5 | tr '\n' ' ' | sed -E 's/ $//g')
+	export puertos_servicios=$(grep -E 'Ports: ' $RUTA_DIRECTORIO_PRINCIPAL/recon/puertos.txt | grep -Eo '[0-9]{1,}([a-zA-Z]|/)+http[a-zA-Z]*' | cut -d '/' -f1,5 | tr '\n' ' ' | sed -E 's/ $//g')
 
 	echo "Puertos abiertos con servicios HTTP: $puertos_servicios"
 
@@ -462,16 +460,12 @@ proceso_fuzzing() {
 			puerto=$(echo "$datos" | cut -d'/' -f1)
 
 			protocolo=$(echo "$datos" | cut -d'/' -f2)
-			
-			echo "RUTA DEL DICCIONARIO: $RUTA_DICCIONARIO"
-			
-			ruta="./$RUTA_DICCIONARIO"
-			
-			echo "ruta que utilizara ffuf: $ruta"
 
-			ffuf -u $protocolo://$DIRECCION_IPv4:$puerto/FUZZ -w $ruta -t 150 -c
+			ffuf -u $protocolo://$DIRECCION_IPv4:$puerto/FUZZ -w $RUTA_DICCIONARIO -t 150 -c
 
 		done
+		
+		IFS="$IFS_original"
 
 	fi
 
@@ -508,13 +502,9 @@ bucle_principal_script() {
 
 	escaneos_NMAP
 	
-
-	# cd "$RUTA_DIRECTORIO_PRINCIPAL"
-	
 	analisis_escaneos
 
 	proceso_fuzzing
-
 
 }
 
