@@ -381,7 +381,7 @@ verificar_ruta_creacion_directorio() {
 
 			fi
 
-		else:
+		else
 
 			EXIT_CODE=7
 
