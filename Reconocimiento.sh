@@ -346,7 +346,9 @@ verificar_direccion_IPv4() {
 
 solicitar_confirmacion_operacion() {
 
-	while true; do
+	repetir=1
+
+	while [ "$repetir" -eq 1 ]; do
 
 		echo "$1 [s/n]: "
 
@@ -354,7 +356,7 @@ solicitar_confirmacion_operacion() {
 
 		if [ opcion == "s" ] || [ opcion == "S" ] || [ opcion == "n" ] || [ opcion == "N" ]; then
 
-			break
+			repetir=0
 
 		fi
 
