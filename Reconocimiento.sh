@@ -132,12 +132,13 @@ verificar_exit_code() {
 			12) imprimir_mensaje_error "Error al tratar de crear el directorio principal '$NOMBRE_DIRECTORIO_PRINCIPAL' dentro de '$RUTA_DIRECTORIOS_PADRE." ;;
 
 
-			13) imprimir_mensaje_error "Es necesario ejecutar este script con permisos de superusuario para poder usar algunas opciones del comando NMAP utilizadas dentro de
- este script." ;;
+			13) imprimir_mensaje_error "Es necesario ejecutar este script con permisos de superusuario para poder usar algunas opciones del comando NMAP utilizadas dentro de este script." ;;
  
- 			14) imprimir_mensaje_eror "La ruta del diccionario a utilizar '$RUTA_DICCIONARIO' no corresponde a un archivo." ;;
+ 			14) imprimir_mensaje_error "La ruta del diccionario a utilizar '$RUTA_DICCIONARIO' no corresponde a un archivo." ;;
 
-			15) imprimir_mensaje_eror "Error al tratar de crear los subdirectorios dentro de '$RUTA_DIRECTORIO_PRINCIAL'" ;;
+			15) imprimir_mensaje_error "Error al tratar de crear los subdirectorios dentro de '$RUTA_DIRECTORIO_PRINCIAL'" ;;
+
+			16) imprimir_mensaje_error "El script debe de ser invocado con al menos 2 argumentos: direccion IPv4 del equipo destino y la ruta o nombre del directorio principal que se creará" ;;
 
 
 		esac
@@ -260,37 +261,46 @@ verificar_argumentos_script() {
 		EXIT_CODE=1
 		
 	else
+
+		if [ "$NUMERO_ARGUMENTOS_SCRIPT" -ge 2 ]; then
 	
-		if ! echo "$RUTA_DIRECTORIO_PRINCIPAL" | grep -qE '^/{0,1}((\.{1,2}|[a-zA-Z0-9_-]+)/)*[a-zA-Z0-9_-]+$'; then
-		
-			EXIT_CODE=5
+			if ! echo "$RUTA_DIRECTORIO_PRINCIPAL" | grep -qE '^/{0,1}((\.{1,2}|[a-zA-Z0-9_-]+)/)*[a-zA-Z0-9_-]+$'; then
+
+				EXIT_CODE=5
+
+			else
+
+				RUTA_DIRECTORIOS_PADRE=$(echo "$RUTA_DIRECTORIO_PRINCIPAL" | grep -Eo '^/{0,1}((\.{1,2}|[a-zA-Z0-9_-]+)/)*')
+
+				if [ "$RUTA_DIRECTORIOS_PADRE" == "" ]; then
+
+					RUTA_DIRECTORIOS_PADRE="."
+
+				fi
+
+				NOMBRE_DIRECTORIO_PRINCIPAL=$(echo "$RUTA_DIRECTORIO_PRINCIPAL" | grep -Eo '[a-zA-Z0-9_-]+$')
+
+			fi
+
+			if [ "$RUTA_DICCIONARIO" != "" ]; then
+
+				if ! echo "$RUTA_DICCIONARIO" | grep -qE '^/{0,1}((\.{1,2}|[a-zA-Z0-9_-]+)/)*[a-zA-Z0-9_-]+(\.[a-zA-Z0-9]+)*$'; then
+
+					EXIT_CODE=6
+
+				elif ! [ -f "$RUTA_DICCIONARIO" ]; then
+
+					EXIT_CODE=13
+
+				fi
+
+			fi
 
 		else
 
-			RUTA_DIRECTORIOS_PADRE=$(echo "$RUTA_DIRECTORIO_PRINCIPAL" | grep -Eo '^/{0,1}((\.{1,2}|[a-zA-Z0-9_-]+)/)*')
-			
-			if [ "$RUTA_DIRECTORIOS_PADRE" == "" ]; then
-			
-				RUTA_DIRECTORIOS_PADRE="."
-			
-			fi
-			
-			NOMBRE_DIRECTORIO_PRINCIPAL=$(echo "$RUTA_DIRECTORIO_PRINCIPAL" | grep -Eo '[a-zA-Z0-9_-]+$')
-			
-		fi
-		
-		if [ "$RUTA_DICCIONARIO" != "" ]; then
-		
-			if ! echo "$RUTA_DICCIONARIO" | grep -qE '^/{0,1}((\.{1,2}|[a-zA-Z0-9_-]+)/)*[a-zA-Z0-9_-]+(\.[a-zA-Z0-9]+)*$'; then
-			
-				EXIT_CODE=6
-				
-			elif ! [ -f "$RUTA_DICCIONARIO" ]; then
-			
-				EXIT_CODE=13
-			
-			fi
-			
+			EXIT_CODE=16
+
+
 		fi
 	
 
