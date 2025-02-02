@@ -87,7 +87,7 @@ imprimir_ayuda_script() {
 
 	echo -e "\nNOTA 2: Si este script no es ejecutado como root, el usuario que lo ejecuta debe de tener permisos de sudo, ya que al principio se solicita ingresar la contraseña para verificarlo y poder realizar la ejecucion correcta de las opciones de nmap que requieren permisos de superusuario.\n"
 	
-	echo -e "\nNOTA 3: Si no se especifica una ruta del archivo de diccionario a utilizar, el script por defecto utiliza el diccionario /Discovery/Web-Content/raft-large-directories-lowercase.txt que se encuentra dentro de la ruta del paquete seclists al ser instalado con el gestor de paquetes del sistema.\n"
+	echo -e "\nNOTA 3: Si no se especifica una ruta del archivo de diccionario a utilizar, el script por defecto utiliza el diccionario /Discovery/Web-Content/raft-small-words-lowercase.txt que se encuentra dentro de la ruta del paquete seclists al ser instalado con el gestor de paquetes del sistema.\n"
 
 }
 
@@ -193,7 +193,7 @@ verificar_paquetes_instalados() {
 
 			echo "Diccionarios del paquete seclists ubicados en la ruta: $RUTA_DICCIONARIO"
 			
-			RUTA_DICCIONARIO="$RUTA_DICCIONARIO/Discovery/Web-Content/raft-large-directories-lowercase.txt"
+			RUTA_DICCIONARIO="$RUTA_DICCIONARIO/Discovery/Web-Content/raft-small-words-lowercase.txt"
 
 		fi
 		
