@@ -14,11 +14,7 @@ NOMBRE_DIRECTORIO_PRINCIPAL="$2"
 
 RUTA_CREACION="$3"
 
-if [ "$RUTA_CREACION" == "" ]; then
-
-	RUTA_CREACION="$PWD"
-
-fi
+RUTA_DICCIONARIO=""
 
 
 #Variable global que almacena el EXIT_CODE retornado al realizar operaciones criticas dentro del script.
@@ -32,9 +28,10 @@ imprimir_mensaje_error() {
 
 	#Esta funcion es utilizada para imprimir el mensaje recibido como argumento en la salida estandar de errores del sistema.
 
-	echo "$1" >&2
+	echo -e "$1" >&2
 
 }
+
 
 verificar_exit_code() {
 
@@ -115,19 +112,26 @@ verificar_paquetes_instalados() {
 
 
 	fi
+	
+	
+	if [ "$RUTA_DICCIONARIO" == "" ]; then
 
+		RUTA_DICCIONARIO=$(locate seclists | head -n 1)
 
+		if [ "$RUTA_DICCIONARIO" == "" ] || ( ! [ -d "$RUTA_DICCIONARIO" ]); then
 
-	export ruta_diccionarios_seclists=$(locate seclists | head -n 1)
+			paquetes_no_instalados+=("seclists")
 
-	if [ "$ruta_diccionarios_seclists" == "" ] || ( ! [ -d "$ruta_diccionarios_seclists" ]); then
+		else
 
-		paquetes_no_instalados+=("seclists")
+			echo "Diccionarios del paquete seclists ubicados en la ruta: $ruta_diccionarios_seclists"
 
+		fi
+		
 	else
-
-		echo -e "Diccionarios del paquete seclists ubicados en la ruta: $ruta_diccionarios_seclists"
-
+	
+		echo "Ruta del diccionario a utilizar: $RUTA_DICCIONARIO"
+		
 	fi
 
 
@@ -144,13 +148,13 @@ verificar_paquetes_instalados() {
 
 error_paquetes_no_instalados() {
 
-	imprimir_mensaje_error "Error. Los siguientes paquetes no se encuentran instalados en el sistema."
+	imprimir_mensaje_error "\nError: Los siguientes paquetes no se encuentran instalados en el sistema.\n"
 
 	paquetes_no_instalados=("$@")
 
 	for nombre_paquete in ${paquetes_no_instalados[@]}; do
 
-		echo "$nombre_paquete"
+		echo "> $nombre_paquete"
 
 	done
 
