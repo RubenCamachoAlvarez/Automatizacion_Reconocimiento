@@ -55,7 +55,7 @@ imprimir_ayuda_script() {
 
 	echo -e "\nAUTOMATIZACION DE PROCESO DE RECONOCIMIENTO\n"
 
-	echo "Funcion: Este script esta diseñado para poder realizar el proceso de reconocimiento de un equipo objetivo previo a realizar un proceso de pentest."
+	echo -e "\nFuncion: Este script esta diseñado para poder realizar el proceso de reconocimiento de un equipo objetivo previo a realizar un proceso de pentest.\n"
 
 	echo "Este script en un principio comienza creando un directorio principal donde posteriormente realiza la creacion de los subdirectorios 'recon', 'exploit' y 'content'."
 
@@ -65,19 +65,19 @@ imprimir_ayuda_script() {
 
 	echo -e "\nModo de invocacion:\n"
 
-	echo -e "bash $INVOCACION_SCRIPT direccion_ipv4, ruta_creacion_directorio_principal [, ruta_archivo_diccionario]\n\n"
+	echo -e "bash $INVOCACION_SCRIPT direccion_ipv4 ruta_creacion_directorio_principal [ruta_archivo_diccionario]\n\n"
 
 	echo -e "De este modo, si queremos ejecutar este script para un equipo con la direccion IPv4 192.168.25.30 y queremos realizar la creacion del directorio principal en /home/user/ con el nombre de 'escaneo', ejecutariamos el comando de la siguiente manera.\n"
 
 	echo -e "bash $INVOCACION_SCRIPT 192.168.25.30 /home/user/escaneo\n\n"
 
-	echo -e "Del mismo modo, si queremos ahora tambien indicar que use como diccionario el archivo 'diccionario.txt' que se encuentra en el directorio padre del directorio donde se ejecuta este comando, hariamos la invocacion del comando de la siguiente manera."
+	echo -e "Del mismo modo, si queremos ahora tambien indicar que use como diccionario el archivo 'diccionario.txt' que se encuentra en el directorio padre del directorio donde se ejecuta este comando, hariamos la invocacion del comando de la siguiente manera.\n"
 
 	echo -e "bash $INVOCACION_SCRIPT 192.168.25.30 /home/user/escaneo ../diccionario.txt\n"
 
 	echo -e "\nEn ambos casos, tanto para indicar la ruta donde se creara el directorio del escaneo, como para indicar la ruta del archivo que sera usado como diccionario, pueden indicarse por medio de rutas absolutas o relativas.\n"
 
-	echo "NOTA IMPORTANTE: Cuando se indica la ruta (con el nombre) del directorio que se va a crear por este script, el script realiza previamente un análisis para conocer si los directorios padres ya existen."
+	echo -e "\nNOTA IMPORTANTE: Cuando se indica la ruta (con el nombre) del directorio que se va a crear por este script, el script realiza previamente un análisis para conocer si los directorios padres ya existen.\n"
 
 	echo "En caso de que estos directorios padres no existan el script intenta realizar su creacion automaticamente."
 
@@ -85,7 +85,9 @@ imprimir_ayuda_script() {
 
 	echo -e "Esta medida esta hecha para mitigar cualquier posibilidad de borrar informacion importante y que en caso de querer hacerlo EL USUARIO LO HAGA MANUALMENTE.\n"
 
-	echo "NOTA 2: Si este script no es ejecutado como root, el usuario que lo ejecuta debe de tener permisos de sudo, ya que al principio se solicita ingresar la contraseña para verificarlo y poder realizar la ejecucion correcta de las opciones de nmap que requieren permisos de superusuario."
+	echo -e "\nNOTA 2: Si este script no es ejecutado como root, el usuario que lo ejecuta debe de tener permisos de sudo, ya que al principio se solicita ingresar la contraseña para verificarlo y poder realizar la ejecucion correcta de las opciones de nmap que requieren permisos de superusuario.\n"
+	
+	echo -e "\nNOTA 3: Si no se especifica una ruta del archivo de diccionario a utilizar, el script por defecto utiliza el diccionario /Discovery/Web-Content/raft-large-directories-lowercase.txt que se encuentra dentro de la ruta del paquete seclists al ser instalado con el gestor de paquetes del sistema.\n"
 
 }
 
@@ -189,7 +191,7 @@ verificar_paquetes_instalados() {
 
 			echo "Diccionarios del paquete seclists ubicados en la ruta: $RUTA_DICCIONARIO"
 			
-			RUTA_DICCIONARIO="$RUTA_DICCIONARIO/Discovery/Web-Content/raft-large-words-lowercase.txt"
+			RUTA_DICCIONARIO="$RUTA_DICCIONARIO/Discovery/Web-Content/raft-large-directories-lowercase.txt"
 
 		fi
 		
@@ -492,6 +494,14 @@ imprimir_datos_operacion() {
 }
 
 bucle_principal_script() {
+
+	if [ "$NUMERO_ARGUMENTOS_SCRIPT" -eq 0 ]; then
+
+		EXIT_CODE=1
+
+		verificar_exit_code
+
+	fi
 
 	verificar_permisos_superusuario
 	
