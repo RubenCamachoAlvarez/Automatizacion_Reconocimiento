@@ -346,31 +346,24 @@ verificar_direccion_IPv4() {
 
 solicitar_confirmacion_operacion() {
 
-	repetir=1
-
-	while [ "$repetir" -eq 1 ]; do
+	while true; do
 
 		echo "$1 [s/n]: "
 
 		read opcion
 
-		if [ opcion == "s" ] || [ opcion == "S" ] || [ opcion == "n" ] || [ opcion == "N" ]; then
+		if [ "$opcion" == "s" ] || [ "$opcion" == "S" ]; then
 
-			repetir=0
+			return 0
+
+		elif [ "$opcion" == "n" ] || [ "$opcion" == "n" ]; then
+
+			return 1
 
 		fi
 
+
 	done
-
-	if [ opcion == "s" ] || [ opcion == "S" ]; then
-
-		return 0
-
-	elif [ opcion == "n" ] || [ opcion == "n" ]; then
-
-		return 1
-
-	fi
 
 }
 
