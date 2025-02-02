@@ -180,9 +180,6 @@ verificar_paquetes_instalados() {
 
 
 	fi
-
-	echo "ruta del diccionario ingresado: $RUTA_DICCIONARIO"
-	
 	
 	if [ "$RUTA_DICCIONARIO" == "" ]; then
 
@@ -355,17 +352,23 @@ solicitar_confirmacion_operacion() {
 
 		read opcion
 
-		if [ opcion == "s" ] || [ opcion == "S" ]; then
+		if [ opcion == "s" ] || [ opcion == "S" ] || [ opcion == "n" ] || [ opcion == "N" ]; then
 
-			return 0
-
-		elif [ opcion == "n" ] || [ opcion == "n" ]; then
-
-			return 1
+			break
 
 		fi
 
 	done
+
+	if [ opcion == "s" ] || [ opcion == "S" ]; then
+
+		return 0
+
+	elif [ opcion == "n" ] || [ opcion == "n" ]; then
+
+		return 1
+
+	fi
 
 }
 
