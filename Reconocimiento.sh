@@ -135,7 +135,9 @@ verificar_exit_code() {
 			13) imprimir_mensaje_error "Es necesario ejecutar este script con permisos de superusuario para poder usar algunas opciones del comando NMAP utilizadas dentro de
  este script." ;;
  
- 			14) imprimir_mensaje_eror "La ruta del diccionario a utilizar '$RUTA_DICCIONARIO' no corresponde a un archivo."
+ 			14) imprimir_mensaje_eror "La ruta del diccionario a utilizar '$RUTA_DICCIONARIO' no corresponde a un archivo." ;;
+
+			15) imprimir_mensaje_eror "Error al tratar de crear los subdirectorios dentro de '$RUTA_DIRECTORIO_PRINCIAL'" ;;
 
 
 		esac
@@ -398,7 +400,7 @@ verificar_ruta_creacion_directorio() {
 		
 		if [ -w "$RUTA_DIRECTORIOS_PADRE" ]; then
 
-			if ! mkdir "$NOMBRE_DIRECTORIO_PRINCIPAL"; then
+			if ! mkdir "$RUTA_DIRECTORIO_PRINCIPAL"; then
 			
 				EXIT_CODE=12
 
@@ -424,7 +426,13 @@ verificar_ruta_creacion_directorio() {
 
 creacion_subdirectorios() {
 
-	mkdir $RUTA_DIRECTORIO_PRINCIPAL/recon $RUTA_DIRECTORIO_PRINCIPAL/exploit $RUTA_DIRECTORIO_PRINCIPAL/content
+	if ! mkdir $RUTA_DIRECTORIO_PRINCIPAL/recon $RUTA_DIRECTORIO_PRINCIPAL/exploit $RUTA_DIRECTORIO_PRINCIPAL/content; then
+
+		EXIT_CODE=15
+
+		verificar_exit_code
+
+	fi
 
 }
 
