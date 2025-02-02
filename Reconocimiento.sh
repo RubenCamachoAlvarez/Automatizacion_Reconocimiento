@@ -506,6 +506,8 @@ bucle_principal_script() {
 
 	proceso_fuzzing
 
+	echo "HA CONCLUIDO EL PROCESO SATISFACTORIAMENTE."
+
 }
 
 bucle_principal_script
