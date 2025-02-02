@@ -10,11 +10,13 @@
 
 DIRECCION_IPv4="$1"
 
-NOMBRE_DIRECTORIO_PRINCIPAL="$2"
+RUTA_DIRECTORIO_PRINCIPAL="$2"
 
-RUTA_CREACION="$3"
+RUTA_DICCIONARIO="$3"
 
-RUTA_DICCIONARIO=""
+RUTA_DIRECTORIOS_PADRE=""
+
+NOMBRE_DIRECTORIO_PRINCIPAL=""
 
 
 #Variable global que almacena el EXIT_CODE retornado al realizar operaciones criticas dentro del script.
@@ -52,21 +54,28 @@ verificar_exit_code() {
 			3) imprimir_mensaje_error "El primer argumento ($DIRECCION_IPv4) del script no corresponde con el formato de una direccion IPv4." ;;
 
 			4) imprimir_mensaje_error "Los octetos de la direccion IPv4 '$DIRECCION_IPv4' no pueden ser mayores a 255." ;;
+			
+			5) imprimir_mensaje_error "El argumento '$RUTA_DIRECTORIO_PRINCIPAL' no corresppnde a una ruta valida en el sistema de archivos para la creacion del directorio principal." ;;
+			
+			6) imprimir_mensaje_error "El argumento '$RUTA_DICCIONARIO' no corresponde a una ruta valida al archivo que sera utilizado como diccionario." ;;
 
-			5) imprimir_mensaje_error "La ruta '$RUTA_CREACION' no existe." ;;
+			7) imprimir_mensaje_error "La ruta '$RUTA_DIRECTORIOS_PADRE' no existe." ;;
 
-			6) imprimir_mensaje_error "Error al tratar de crear la ruta '$RUTA_CREACION' para almacenar el directorio principal." ;;
+			8) imprimir_mensaje_error "Error al tratar de crear la ruta '$RUTA_DIRECTORIOS_PADRE' para almacenar el directorio principal." ;;
 
-			7) imprimir_mensaje_error "La ruta '$RUTA_CREACION' no cuenta con los permisos necesarios para llevar a cabo la creacion del directorio principal." ;;
+			9) imprimir_mensaje_error "La ruta '$RUTA_DIRECTORIOS_PADRE' no cuenta con los permisos necesarios para llevar a cabo la creacion del directorio principal." ;;
 
-			8) imprimir_mensaje_error "La ruta '$RUTA_CREACION' no pertenece al usuario que ejecuta el script." ;;
+			10) imprimir_mensaje_error "La ruta '$RUTA_DIRECTORIOS_PADRE' no pertenece al usuario que ejecuta el script." ;;
 
-			9) imprimir_mensaje_error "Ya existe un elemento con el nombre de '$NOMBRE_DIRECTORIO_PRINCIPAL' dentro de '$RUTA_CREACION'." ;;
+			11) imprimir_mensaje_error "Ya existe un elemento con el nombre de '$NOMBRE_DIRECTORIO_PRINCIPAL' dentro de '$RUTA_DIRECTORIOS_PADRE'." ;;
 
-			10) imprimir_mensaje_error "Error al tratar de crear el directorio principal '$NOMBRE_DIRECTORIO_PRINCIPAL' dentro de '$RUTA_CREACION'." ;; 
+			12) imprimir_mensaje_error "Error al tratar de crear el directorio principal '$NOMBRE_DIRECTORIO_PRINCIPAL' dentro de '$RUTA_DIRECTORIOS_PADRE." ;;
 
 
-			11) imprimir_mensaje_error "Es necesario ejecutar este script con permisos de superusuario para poder usar algunas opciones del comando NMAP utilizadas dentro de este script." ;;
+			13) imprimir_mensaje_error "Es necesario ejecutar este script con permisos de superusuario para poder usar algunas opciones del comando NMAP utilizadas dentro de
+ este script." ;;
+ 
+ 			14) imprimir_mensaje_eror "La ruta del diccionario a utilizar '$RUTA_DICCIONARIO' no corresponde a un archivo."
 
 
 		esac
@@ -124,7 +133,9 @@ verificar_paquetes_instalados() {
 
 		else
 
-			echo "Diccionarios del paquete seclists ubicados en la ruta: $ruta_diccionarios_seclists"
+			echo "Diccionarios del paquete seclists ubicados en la ruta: $RUTA_DICCIONARIO"
+			
+			RUTA_DICCIONARIO="$RUTA_DICCIONARIO/Discovery/Web-Content/raft-large-words-lowercase.txt"
 
 		fi
 		
@@ -148,7 +159,9 @@ verificar_paquetes_instalados() {
 
 error_paquetes_no_instalados() {
 
-	imprimir_mensaje_error "\nError: Los siguientes paquetes no se encuentran instalados en el sistema.\n"
+	imprimir_mensaje_error "\nPAQUETES NO INSTALADOS\n"
+	
+	imprimir_mensaje_error "Los siguientes paquetes no se encuentran instalados en el sistema.\n"
 
 	paquetes_no_instalados=("$@")
 
@@ -161,6 +174,8 @@ error_paquetes_no_instalados() {
 }
 
 verificar_permisos_superusuario() {
+
+	echo -e "\nVERIFICANDO PERMISOS DE SUPERUSUARIO\n"
 
 	if [ "$EUID" -ne 0  ]; then
 
@@ -189,6 +204,51 @@ verificar_argumentos_script() {
 		#En caso de que el script haya sido invocado sin argumento, entonces asignamos 1 como codigo de salida.
 
 		EXIT_CODE=1
+		
+	else
+	
+		#Si la ruta del directorio principal especificada como segundo argumento NO corresponde con el formato de una ruta del sistema.
+	
+		if ! echo "$RUTA_DIRECTORIO_PRINCIPAL" | grep -qE '^/{0,1}((\.{1,2}|[a-zA-Z0-9_-]+)/)*[a-zA-Z0-9_-]+$'; then
+		
+			#Generamos un error indicando esto al usuario.
+		
+			EXIT_CODE=5
+			
+		else
+		
+			#Obtenemos todos los directorios padres de la ruta que indica donde se almacenará el directorio principal.
+		
+			RUTA_DIRECTORIOS_PADRE=$(echo "$RUTA_DIRECTORIO_PRINCIPAL" | grep -Eo '^/{0,1}((\.{1,2}|[a-zA-Z0-9_-]+)/)*')
+			
+			if [ "$RUTA_DIRECTORIOS_PADRE" == "" ]; then
+			
+				#Si no hay directorios padre en la ruta, entonces indicamos que el directorio padre es el directorio en el que se inicio la ejecucion del script '.'.
+			
+				RUTA_DIRECTORIOS_PADRE="."
+			
+			fi
+			
+			#Obtenemos el nombre del directorio principal que sera creado para llevar a cabo el proceso de nuestro script.
+			
+			NOMBRE_DIRECTORIO_PRINCIPAL=$(echo "$RUTA_DIRECTORIO_PRINCIPAL" | grep -Eo '[a-zA-Z0-9_-]+$')
+			
+		fi
+		
+		if [ "$RUTA_DICCIONARIO" != "" ]; then
+		
+			if ! echo "$RUTA_DICCIONARIO" | grep -qE '^/{0,1}((\.{1,2}|[a-zA-Z0-9_-]+)/)*[a-zA-Z0-9_-]+(\.[a-zA-Z0-9]+)*$'; then
+			
+				EXIT_CODE=6
+				
+			elif ! [ -f "$RUTA_DICCIONARIO" ]; then
+			
+				EXIT_CODE=13
+			
+			fi
+			
+		fi
+	
 
 	fi
 
@@ -257,22 +317,22 @@ solicitar_confirmacion_operacion() {
 
 verificar_ruta_creacion_directorio() {
 
-	if ! [ -d "$RUTA_CREACION" ]; then
+	if ! [ -d "$RUTA_DIRECTORIOS_PADRE" ]; then
 
 		#El directorio no existe.
 		
 		#Pedir confirmacion para su creacion.
 		
-		if solicitar_confirmacion_operacion "El directorio $RUTA_CREACION NO existe. ¿Desea intentar crearlo?"; then
+		if solicitar_confirmacion_operacion "La ruta '$RUTA_DIRECTORIOS_PADRE' NO existe. ¿Desea intentar crearla?"; then
 
 			#Si se ha confirmado la creacion de la ruta principal, entonces tratamos de realizar su creacion por medio del comando mkdir -p
 
-			if ! mkdir -p "$RUTA_CREACION"; then
+			if ! mkdir -p "$RUTA_DIRECTORIOS_PADRE"; then
 
 				#Si el codigo de salida producido por mkdir es 1, indicando que la operacion no pudo completarse, entonces generamos
 				#el error indicando que fue imposible llevar a cabo la creacion de la ruta en cuestion y terminamos la ejecucion.
 
-				EXIT_CODE=6
+				EXIT_CODE=8
 
 				verficar_exit_code
 
@@ -283,14 +343,14 @@ verificar_ruta_creacion_directorio() {
 			#Si es rechazado el intento de creacion de la ruta, entonces simplemente generamos el error indicando que la ruta donde
 			#debe de crearse el directorio principal NO existe.
 
-			EXIT_CODE=5
+			EXIT_CODE=7
 
 			verificar_exit_code
 			
 
 		fi
 
-	elif ! ([ -x "$RUTA_CREACION" ] || [ -w "$RUTA_CREACION" ]); then
+	elif ! [ -x "$RUTA_DIRECTORIOS_PADRE" ] || ! [ -w "$RUTA_DIRECTORIOS_PADRE" ]; then
 
 		#El directorio existe pero no se tienen permisos de ejecucion o escritura para continuar con la ejecucion del script.
 		
@@ -300,24 +360,23 @@ verificar_ruta_creacion_directorio() {
 		#el error y dejando al usuario de borrar de manera manual o no el directorio o la cadena de directorios para que estos tengan
 		#los permisos apropiados, o simplemente volver a ejecutar el script con una ruta diferente.
 
-			EXIT_CODE=7
+			EXIT_CODE=9
 
 			verificar_exit_code
 
 	fi
 
 	
-	ruta_final="$RUTA_CREACION/$NOMBRE_DIRECTORIO_PRINCIPAL"
+	
 
-	if [ -e "$ruta_final" ]; then
+	if [ -e "$RUTA_DIRECTORIO_PRINCIPAL" ]; then
 
-		#Si ya existe un elemento con el nombre del directorio principal indicado como segundo argumento, entonces generamos el error y terminamos
-		#la ejecucion del script.
+		#Si ya existe un elemento con el nombre del directorio principal indicado como segundo argumento, entonces generamos el error y terminamos la ejecucion del script.
 		
 		#Nuevamente por motivos de seguridad dejamos toda la responsabilidad al usuario de llevar a cabo la eliminacion manual de los elementos
 		#ya existentes en caso de querer usar dicho nombre para la creacion del directorio principal.
 
-		EXIT_CODE=9
+		EXIT_CODE=11
 
 		verificar_exit_code
 
@@ -326,15 +385,13 @@ verificar_ruta_creacion_directorio() {
 		#En caso de que no exista un elemento con el nombre del directorio principal solicitado, tratamos de llevar a cabo la creacion
 		#del directorio principal.
 		
-		if [ -w "$RUTA_CREACION" ]; then
+		if [ -w "$RUTA_DIRECTORIOS_PADRE" ]; then
 
 			if ! mkdir "$NOMBRE_DIRECTORIO_PRINCIPAL"; then
 
-				#En caso de que mkdir no hay realizado la operacion de creacion del directorio correctamente, entonces esto al usuario mediante
-				#un error.
+				#En caso de que mkdir no hay realizado la operacion de creacion del directorio correctamente, entonces esto al usuario mediante un error.
 			
-
-				EXIT_CODE=10
+				EXIT_CODE=12
 
 				verificar_exit_code
 
@@ -343,7 +400,7 @@ verificar_ruta_creacion_directorio() {
 
 		else
 
-			EXIT_CODE=7
+			EXIT_CODE=9
 
 			verificar_exit_code
 
@@ -358,9 +415,7 @@ verificar_ruta_creacion_directorio() {
 
 creacion_subdirectorios() {
 
-	ruta="$RUTA_CREACION/$NOMBRE_DIRECTORIO_PRINCIPAL"
-
-	cd "$ruta"
+	cd "$RUTA_DIRECTORIO_PRINCIPAL"
 
 	mkdir recon exploit content
 
@@ -407,8 +462,14 @@ proceso_fuzzing() {
 			puerto=$(echo "$datos" | cut -d'/' -f1)
 
 			protocolo=$(echo "$datos" | cut -d'/' -f2)
+			
+			echo "RUTA DEL DICCIONARIO: $RUTA_DICCIONARIO"
+			
+			ruta="./$RUTA_DICCIONARIO"
+			
+			echo "ruta que utilizara ffuf: $ruta"
 
-			ffuf -u $protocolo://$DIRECCION_IPv4:$puerto/FUZZ -w $ruta_diccionarios_seclists/Discovery/Web-Content/raft-large-words-lowercase.txt -t 150 -c
+			ffuf -u $protocolo://$DIRECCION_IPv4:$puerto/FUZZ -w $ruta -t 150 -c
 
 		done
 
@@ -417,23 +478,21 @@ proceso_fuzzing() {
 }
 
 
-imprimir_informacion_script() {
+imprimir_datos_operacion() {
 
-	echo -e "\nINFORMACION DEL SCRIPT\n"
+	echo -e "\nDATOS DE OPERACION\n"
 
 	echo "Direccion IPv4 del equipo objetivo: $DIRECCION_IPv4"
 
 	echo "Nombre del directorio principal que debe de ser creado: $NOMBRE_DIRECTORIO_PRINCIPAL"
 
-	echo "Ruta donde debe de ser creado el directorio principal: $RUTA_CREACION"
+	echo "Ruta donde debe de ser creado el directorio principal: $RUTA_DIRECTORIOS_PADRE"
 
 }
 
 bucle_principal_script() {
 
 	verificar_permisos_superusuario
-
-	imprimir_informacion_script
 	
 	verificar_paquetes_instalados
 
@@ -441,14 +500,16 @@ bucle_principal_script() {
 
 	verificar_direccion_IPv4
 
-	# verificar_ruta_creacion_directorio
+	verificar_ruta_creacion_directorio
+	
+	imprimir_datos_operacion
 
-	# creacion_subdirectorios
+	creacion_subdirectorios
 
-	# escaneos_NMAP
+	escaneos_NMAP
 	
 
-	cd "$RUTA_CREACION/$NOMBRE_DIRECTORIO_PRINCIPAL"
+	# cd "$RUTA_DIRECTORIO_PRINCIPAL"
 	
 	analisis_escaneos
 
