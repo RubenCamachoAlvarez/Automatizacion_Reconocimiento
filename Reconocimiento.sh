@@ -500,7 +500,7 @@ proceso_fuzzing() {
 
 			protocolo=$(echo "$datos" | cut -d'/' -f2)
 
-			ffuf -u $protocolo://$DIRECCION_IPv4:$puerto/FUZZ -w $RUTA_DICCIONARIO -t 150 -c -s | tee "fuff_$protocolo://$DIRECCION_IPv4:$puerto"
+			ffuf -u $protocolo://$DIRECCION_IPv4:$puerto/FUZZ -w $RUTA_DICCIONARIO -t 150 -c | tee "fuff_$protocolo://$DIRECCION_IPv4:$puerto"
 
 		done
 		
