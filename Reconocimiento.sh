@@ -297,7 +297,7 @@ verificar_argumentos_script() {
 
 				elif ! [ -f "$RUTA_DICCIONARIO" ]; then
 
-					EXIT_CODE=13
+					EXIT_CODE=14
 
 				fi
 
