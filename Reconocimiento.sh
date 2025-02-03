@@ -185,7 +185,7 @@ verificar_paquetes_instalados() {
 
 		RUTA_DICCIONARIO=$(locate seclists | head -n 1)
 
-		if [ "$RUTA_DICCIONARIO" == "" ] || ( ! [ -d "$RUTA_DICCIONARIO" ]); then
+		if [ "$RUTA_DICCIONARIO" == "" ]; then
 
 			paquetes_no_instalados+=("seclists")
 
