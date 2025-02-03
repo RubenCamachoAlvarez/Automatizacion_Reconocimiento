@@ -521,6 +521,8 @@ imprimir_datos_operacion() {
 
 	echo "Ruta donde debe de ser creado el directorio principal: $RUTA_DIRECTORIOS_PADRE"
 
+	echo "Ruta del diccionario a utilizar: $RUTA_DICCIONARIO"
+
 }
 
 bucle_principal_script() {
