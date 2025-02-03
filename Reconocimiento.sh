@@ -185,7 +185,7 @@ verificar_paquetes_instalados() {
 
 		if [ -d /usr/share/seclists ]; then
 
-			$RUTA_DICCIONARIO="/usr/share/seclists"
+			RUTA_DICCIONARIO="/usr/share/seclists"
 
 		fi
 
