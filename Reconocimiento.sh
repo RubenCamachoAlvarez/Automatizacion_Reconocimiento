@@ -183,7 +183,11 @@ verificar_paquetes_instalados() {
 	
 	if [ "$RUTA_DICCIONARIO" == "" ]; then
 
-		RUTA_DICCIONARIO=$(locate seclists | head -n 1)
+		if [ -d /usr/share/seclists ]; then
+
+			RUTA_DIRECCIONARIO="/usr/share/seclists"
+
+		fi
 
 		if [ "$RUTA_DICCIONARIO" == "" ]; then
 
